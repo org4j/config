@@ -32,4 +32,28 @@ class RequiredSettingsTest {
       assertThat(context.getEnvironment().getProperty("demo.required")).isEqualTo("set");
     }
   }
+
+  @Test
+  void everyMissingSettingIsNamedOnce() {
+    assertThatThrownBy(
+            () ->
+                new SpringApplicationBuilder(App.class)
+                    .web(WebApplicationType.NONE)
+                    .run(FILE + ",classpath:/required-too.yaml"))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("DEMO_REQUIRED")
+        .hasMessageContaining("DEMO_ALSO")
+        .satisfies(
+            failure -> assertThat(failure.getMessage().split("demo.required:", -1)).hasSize(2));
+  }
+
+  @Test
+  void anEmptyValueIsAValue() {
+    try (var context =
+        new SpringApplicationBuilder(App.class)
+            .web(WebApplicationType.NONE)
+            .run(FILE, "--DEMO_REQUIRED=")) {
+      assertThat(context.getEnvironment().getProperty("demo.required")).isEmpty();
+    }
+  }
 }
